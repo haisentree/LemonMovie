@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 )
 
 var DB *gorm.DB
@@ -143,13 +144,20 @@ func init() {
 }
 
 func main() {
-	for i := 1; i <= 4938; i++ {
-		page := strconv.Itoa(i)
-		GetMovie(page)
+	var wg sync.WaitGroup
+
+	spiderCount := 4
+	for i := 1; i <= 4948; i = i + spiderCount {
+		wg.Add(spiderCount)
+		for k := i; k < i+spiderCount; k++ {
+			page := strconv.Itoa(k)
+			go GetMovie(&wg, page)
+		}
+		wg.Wait()
 	}
 }
 
-func GetMovie(page string) {
+func GetMovie(wg *sync.WaitGroup, page string) {
 	http.Header{}.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0")
 	params := url.Values{}
 	URL, err := url.Parse(BASEURL)
@@ -192,4 +200,5 @@ func GetMovie(page string) {
 		movieList = append(movieList, movie)
 	}
 	DB.Create(&movieList)
+	wg.Done()
 }
