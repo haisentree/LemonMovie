@@ -3,6 +3,7 @@ package models
 import (
 	"LemonMovie/global"
 	"gorm.io/gorm"
+	"strconv"
 )
 
 type MovieModel struct {
@@ -34,10 +35,25 @@ func (m *MovieModel) TableName() string {
 }
 
 // 分页查询所有movie
-func (m *MovieModel) FindAllMovieList() []MovieModel {
+func (m *MovieModel) FindAllMovieList() ([]MovieModel, int64) {
 	var movieList []MovieModel
+	var MaxCount int64
 	global.DB.Limit(40).Offset(0).Order("id desc").Find(&movieList)
-	return movieList
+	global.DB.Model(&MovieModel{}).Count(&MaxCount)
+	return movieList, MaxCount
+}
+
+// 分页查询所有movie
+func (m *MovieModel) FindMovieByPage(page int64) ([]MovieModel, int64) {
+	page = page - 1
+	var movieList []MovieModel
+	var MaxCount int64
+	strInt := strconv.FormatInt(page, 10)
+	pageInt, _ := strconv.Atoi(strInt)
+
+	global.DB.Limit(global.PageLimiter).Offset(global.PageLimiter * pageInt).Order("id desc").Find(&movieList)
+	global.DB.Model(&MovieModel{}).Count(&MaxCount)
+	return movieList, MaxCount
 }
 
 // 根据分类查询movie
